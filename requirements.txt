@@ -1,2 +1,6 @@
 streamlit
 streamlit-audiorecorder
+librosa
+numpy
+soundfile
+scipy
