@@ -29,8 +29,8 @@ st.markdown("<div class='small-text'>Escucha, toca y comprueba si el ritmo está
 
 levels = [
     {"nivel": 1, "nombre": "🥁 Negras", "img": "data/nivel1.png", "audio": "data/nivel1.wav", "tdi_threshold": 8},
-    {"nivel": 2, "nombre": "🎶 Blancas", "img": "data/nivel2.png", "audio": "data/nivel2.wav", "tdi_threshold": 10},
-    {"nivel": 3, "nombre": "⚡ Corcheas", "img": "data/nivel3.png", "audio": "data/nivel3.wav", "tdi_threshold": 12},
+    {"nivel": 2, "nombre": "🎶 Corcheas", "img": "data/nivel2.png", "audio": "data/nivel2.wav", "tdi_threshold": 10},
+    {"nivel": 3, "nombre": "⚡ Puntillo", "img": "data/nivel3.png", "audio": "data/nivel3.wav", "tdi_threshold": 12},
     {"nivel": 4, "nombre": "🔥 Semicorcheas", "img": "data/nivel4.png", "audio": "data/nivel4.wav", "tdi_threshold": 15},
     {"nivel": 5, "nombre": "🎯 Tresillos", "img": "data/nivel5.png", "audio": "data/nivel5.wav", "tdi_threshold": 18},
 ]
