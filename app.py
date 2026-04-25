@@ -268,7 +268,7 @@ st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
 
 st.markdown("<div class='section-title'>Ahora te toca a ti</div>", unsafe_allow_html=True)
 
-col_grabar, _ = st.columns([1, 9])
+col_grabar, _ = st.columns([1, 7.5])
 
 with col_grabar:
     audio = audiorecorder(
