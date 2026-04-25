@@ -15,22 +15,61 @@ st.set_page_config(page_title="Juego de Ritmo", layout="centered")
 
 st.markdown("""
 <style>
-.main {background-color: #FFFDF7;}
-h1 {text-align: center; color: #FF6B6B;}
+.stApp {
+    background: linear-gradient(180deg, #FFF8F0 0%, #FFFFFF 45%);
+}
+
+.main-title {
+    text-align: center;
+    font-size: 44px;
+    font-weight: 800;
+    color: #2F2F2F;
+    margin-bottom: 4px;
+}
+
+.subtitle {
+    text-align: center;
+    color: #666666;
+    font-size: 17px;
+    margin-bottom: 18px;
+}
+
 .level-title {
     font-size: 30px;
     text-align: center;
-    margin-bottom: 10px;
+    margin-top: 18px;
+    margin-bottom: 18px;
     font-weight: 800;
-    color: #333333;
+    color: #2F2F2F;
 }
-.small-text {text-align: center; color: #666666; font-size: 16px;}
+
+.section-card {
+    background-color: #FFFFFF;
+    border-radius: 22px;
+    padding: 22px 24px;
+    margin-top: 24px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+    border: 1px solid #F0E7DD;
+}
+
+.section-title {
+    font-size: 25px;
+    font-weight: 750;
+    color: #2F2F2F;
+    margin-bottom: 10px;
+}
+
+.small-text {
+    text-align: center;
+    color: #666666;
+    font-size: 16px;
+}
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown("<h1>🎵 Juego de Ritmo 🎵</h1>", unsafe_allow_html=True)
+st.markdown("<div class='main-title'>Juego de Ritmo</div>", unsafe_allow_html=True)
 st.markdown(
-    "<div class='small-text'>Escucha, toca y comprueba si tu ritmo está bien 👏</div>",
+    "<div class='subtitle'>Escucha, toca y comprueba si tu ritmo está bien</div>",
     unsafe_allow_html=True
 )
 
@@ -98,7 +137,7 @@ def audio_player(path):
                     box-shadow: 0 1px 2px rgba(0,0,0,0.05);
                 "
             >
-                🔊 Volver a escuchar
+                Volver a escuchar
             </button>
         </div>
         """,
@@ -190,20 +229,26 @@ st.markdown(
 
 st.image(nivel["img"], use_container_width=True)
 
-st.markdown("### 🎧 Escucha cómo suena")
-st.info("Escucha primero el ejemplo antes de grabarte 🎵")
+# -----------------------
+# ESCUCHA
+# -----------------------
 
+st.markdown("<div class='section-card'>", unsafe_allow_html=True)
+st.markdown("<div class='section-title'>Escucha el ejemplo</div>", unsafe_allow_html=True)
+st.info("Escucha primero el ritmo antes de grabarte.")
 audio_player(nivel["audio"])
+st.markdown("</div>", unsafe_allow_html=True)
 
 # -----------------------
 # GRABACIÓN
 # -----------------------
 
-st.write("🎙️ ¡Ahora te toca a ti!")
+st.markdown("<div class='section-card'>", unsafe_allow_html=True)
+st.markdown("<div class='section-title'>Ahora te toca a ti</div>", unsafe_allow_html=True)
 
 audio = audiorecorder(
-    "▶️ Grabar",
-    "⏹️ Parar",
+    "Grabar",
+    "Parar",
     key=f"audio_recorder_nivel_{st.session_state.nivel_actual}"
 )
 
@@ -212,11 +257,11 @@ if len(audio) > 0:
         user_audio_path = tmp.name
         audio.export(user_audio_path, format="wav")
 
-    st.success("🎧 ¡Grabación completada!")
-    st.write("🔁 Escucha tu grabación:")
+    st.success("¡Grabación completada!")
+    st.write("Escucha tu grabación:")
     st.audio(user_audio_path)
 
-    if st.button("✅ Evaluar mi ritmo"):
+    if st.button("Evaluar ritmo"):
         metrics = compute_tdi_metrics(nivel["audio"], user_audio_path)
 
         if not np.isfinite(metrics["tdi_norm"]):
@@ -224,17 +269,19 @@ if len(audio) > 0:
         else:
             if metrics["tdi_norm"] <= nivel["tdi_threshold"]:
                 st.balloons()
-                st.success("🎉 ¡Muy bien! Tu ritmo está dentro del rango admisible.")
+                st.success("¡Muy bien! Tu ritmo está dentro del rango admisible.")
 
-                if st.button("🚀 Siguiente nivel"):
+                if st.button("Siguiente nivel"):
                     if st.session_state.nivel_actual < len(levels) - 1:
                         st.session_state.nivel_actual += 1
                         reset_grabacion()
                         st.rerun()
                     else:
-                        st.success("🏆 ¡Has completado todos los niveles!")
+                        st.success("¡Has completado todos los niveles!")
             else:
-                st.warning("😅 ¡Casi lo tienes! El ritmo no está del todo bien todavía. Inténtalo otra vez 👏")
+                st.warning("¡Casi lo tienes! El ritmo no está del todo bien todavía. Inténtalo otra vez.")
+
+st.markdown("</div>", unsafe_allow_html=True)
 
 # -----------------------
 # NAVEGACIÓN
@@ -243,14 +290,14 @@ if len(audio) > 0:
 col1, col2 = st.columns(2)
 
 with col1:
-    if st.button("⬅️ Atrás"):
+    if st.button("Anterior"):
         if st.session_state.nivel_actual > 0:
             st.session_state.nivel_actual -= 1
             reset_grabacion()
             st.rerun()
 
 with col2:
-    if st.button("➡️ Adelante"):
+    if st.button("Siguiente"):
         if st.session_state.nivel_actual < len(levels) - 1:
             st.session_state.nivel_actual += 1
             reset_grabacion()
