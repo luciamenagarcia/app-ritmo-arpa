@@ -13,66 +13,6 @@ from audiorecorder import audiorecorder
 
 st.set_page_config(page_title="Juego de Ritmo", layout="centered")
 
-st.markdown("""
-<style>
-.stApp {
-    background: linear-gradient(180deg, #FFF8F0 0%, #FFFFFF 45%);
-}
-
-.main-title {
-    text-align: center;
-    font-size: 44px;
-    font-weight: 800;
-    color: #2F2F2F;
-    margin-bottom: 4px;
-}
-
-.subtitle {
-    text-align: center;
-    color: #666666;
-    font-size: 17px;
-    margin-bottom: 18px;
-}
-
-.level-title {
-    font-size: 30px;
-    text-align: center;
-    margin-top: 18px;
-    margin-bottom: 18px;
-    font-weight: 800;
-    color: #2F2F2F;
-}
-
-.section-card {
-    background-color: #FFFFFF;
-    border-radius: 22px;
-    padding: 22px 24px;
-    margin-top: 24px;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
-    border: 1px solid #F0E7DD;
-}
-
-.section-title {
-    font-size: 25px;
-    font-weight: 750;
-    color: #2F2F2F;
-    margin-bottom: 10px;
-}
-
-.small-text {
-    text-align: center;
-    color: #666666;
-    font-size: 16px;
-}
-</style>
-""", unsafe_allow_html=True)
-
-st.markdown("<div class='main-title'>Juego de Ritmo</div>", unsafe_allow_html=True)
-st.markdown(
-    "<div class='subtitle'>Escucha, toca y comprueba si tu ritmo está bien</div>",
-    unsafe_allow_html=True
-)
-
 # -----------------------
 # RUTAS BASE
 # -----------------------
@@ -84,11 +24,56 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # -----------------------
 
 levels = [
-    {"nivel": 1, "nombre": "Negras", "img": os.path.join(BASE_DIR, "data", "nivel1.png"), "audio": os.path.join(BASE_DIR, "data", "nivel1.wav"), "tdi_threshold": 0.087},
-    {"nivel": 2, "nombre": "Corcheas", "img": os.path.join(BASE_DIR, "data", "nivel2.png"), "audio": os.path.join(BASE_DIR, "data", "nivel2.wav"), "tdi_threshold": 0.095},
-    {"nivel": 3, "nombre": "Puntillo", "img": os.path.join(BASE_DIR, "data", "nivel3.png"), "audio": os.path.join(BASE_DIR, "data", "nivel3.wav"), "tdi_threshold": 0.110},
-    {"nivel": 4, "nombre": "Semicorcheas", "img": os.path.join(BASE_DIR, "data", "nivel4.png"), "audio": os.path.join(BASE_DIR, "data", "nivel4.wav"), "tdi_threshold": 0.130},
-    {"nivel": 5, "nombre": "Tresillos", "img": os.path.join(BASE_DIR, "data", "nivel5.png"), "audio": os.path.join(BASE_DIR, "data", "nivel5.wav"), "tdi_threshold": 0.150},
+    {
+        "nivel": 1,
+        "nombre": "Negras",
+        "img": os.path.join(BASE_DIR, "data", "nivel1.png"),
+        "audio": os.path.join(BASE_DIR, "data", "nivel1.wav"),
+        "tdi_threshold": 0.087,
+        "color1": "#EAF4FF",
+        "color2": "#F7FBFF",
+        "accent": "#2D8CFF"
+    },
+    {
+        "nivel": 2,
+        "nombre": "Corcheas",
+        "img": os.path.join(BASE_DIR, "data", "nivel2.png"),
+        "audio": os.path.join(BASE_DIR, "data", "nivel2.wav"),
+        "tdi_threshold": 0.095,
+        "color1": "#EAFBF1",
+        "color2": "#F8FFFB",
+        "accent": "#2EB872"
+    },
+    {
+        "nivel": 3,
+        "nombre": "Puntillo",
+        "img": os.path.join(BASE_DIR, "data", "nivel3.png"),
+        "audio": os.path.join(BASE_DIR, "data", "nivel3.wav"),
+        "tdi_threshold": 0.110,
+        "color1": "#FFF3E6",
+        "color2": "#FFFBF6",
+        "accent": "#FF9F43"
+    },
+    {
+        "nivel": 4,
+        "nombre": "Semicorcheas",
+        "img": os.path.join(BASE_DIR, "data", "nivel4.png"),
+        "audio": os.path.join(BASE_DIR, "data", "nivel4.wav"),
+        "tdi_threshold": 0.130,
+        "color1": "#F2ECFF",
+        "color2": "#FBF9FF",
+        "accent": "#7B61FF"
+    },
+    {
+        "nivel": 5,
+        "nombre": "Tresillos",
+        "img": os.path.join(BASE_DIR, "data", "nivel5.png"),
+        "audio": os.path.join(BASE_DIR, "data", "nivel5.wav"),
+        "tdi_threshold": 0.150,
+        "color1": "#FFEAF3",
+        "color2": "#FFF8FB",
+        "accent": "#FF5C8A"
+    },
 ]
 
 # -----------------------
@@ -100,13 +85,96 @@ if "nivel_actual" not in st.session_state:
 
 nivel = levels[st.session_state.nivel_actual]
 
+# -----------------------
+# CSS DINÁMICO
+# -----------------------
+
+st.markdown(f"""
+<style>
+.stApp {{
+    background: linear-gradient(180deg, {nivel["color1"]} 0%, {nivel["color2"]} 100%);
+}}
+
+.main-title {{
+    text-align: center;
+    font-size: 44px;
+    font-weight: 800;
+    color: #2F2F2F;
+    margin-bottom: 4px;
+}}
+
+.subtitle {{
+    text-align: center;
+    color: #666666;
+    font-size: 17px;
+    margin-bottom: 18px;
+}}
+
+.level-title {{
+    font-size: 30px;
+    text-align: center;
+    margin-top: 18px;
+    margin-bottom: 18px;
+    font-weight: 800;
+    color: #2F2F2F;
+}}
+
+.section-card {{
+    background-color: transparent;
+    border-radius: 0px;
+    padding: 0px;
+    margin-top: 28px;
+    box-shadow: none;
+    border: none;
+}}
+
+.section-title {{
+    font-size: 25px;
+    font-weight: 750;
+    color: #2F2F2F;
+    margin-bottom: 12px;
+}}
+
+.section-divider {{
+    height: 1px;
+    background-color: rgba(47, 47, 47, 0.12);
+    margin: 32px 0 24px 0;
+}}
+
+div.stButton > button {{
+    border-radius: 10px;
+    border: 1px solid {nivel["accent"]};
+    color: #2F2F2F;
+    background-color: #FFFFFF;
+    padding: 0.45rem 1rem;
+    font-weight: 600;
+}}
+
+div.stButton > button:hover {{
+    border-color: {nivel["accent"]};
+    color: {nivel["accent"]};
+    background-color: #FFFFFF;
+}}
+</style>
+""", unsafe_allow_html=True)
+
+# -----------------------
+# CABECERA
+# -----------------------
+
+st.markdown("<div class='main-title'>Juego de Ritmo</div>", unsafe_allow_html=True)
+st.markdown(
+    "<div class='subtitle'>Escucha, toca y comprueba si tu ritmo está bien</div>",
+    unsafe_allow_html=True
+)
+
 st.progress((st.session_state.nivel_actual + 1) / len(levels))
 
 # -----------------------
 # AUDIO PLAYER
 # -----------------------
 
-def audio_player(path):
+def audio_player(path, accent):
     with open(path, "rb") as f:
         audio_bytes = f.read()
 
@@ -129,11 +197,12 @@ def audio_player(path):
                     margin-top: 12px;
                     padding: 8px 16px;
                     border-radius: 10px;
-                    border: 1px solid #d0d0d0;
-                    border-bottom: 3px solid #bdbdbd;
+                    border: 1px solid {accent};
+                    border-bottom: 3px solid {accent};
                     background-color: white;
                     cursor: pointer;
                     font-size: 15px;
+                    font-weight: 600;
                     box-shadow: 0 1px 2px rgba(0,0,0,0.05);
                 "
             >
@@ -229,6 +298,8 @@ st.markdown(
 
 st.image(nivel["img"], use_container_width=True)
 
+st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
+
 # -----------------------
 # ESCUCHA
 # -----------------------
@@ -236,8 +307,10 @@ st.image(nivel["img"], use_container_width=True)
 st.markdown("<div class='section-card'>", unsafe_allow_html=True)
 st.markdown("<div class='section-title'>Escucha el ejemplo</div>", unsafe_allow_html=True)
 st.info("Escucha primero el ritmo antes de grabarte.")
-audio_player(nivel["audio"])
+audio_player(nivel["audio"], nivel["accent"])
 st.markdown("</div>", unsafe_allow_html=True)
+
+st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
 
 # -----------------------
 # GRABACIÓN
@@ -286,6 +359,8 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------
 # NAVEGACIÓN
 # -----------------------
+
+st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
 
 col1, col2 = st.columns(2)
 
