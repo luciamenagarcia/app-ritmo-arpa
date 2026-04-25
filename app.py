@@ -1,5 +1,6 @@
 import os
 import tempfile
+import base64
 import numpy as np
 import streamlit as st
 import librosa
@@ -17,19 +18,12 @@ st.markdown("""
 h1 {text-align: center; color: #FF6B6B;}
 .level-title {font-size: 28px; text-align: center; margin-bottom: 10px; font-weight: 700;}
 .small-text {text-align: center; color: #666666; font-size: 16px;}
-.metric-box {
-    padding: 12px;
-    border-radius: 12px;
-    background-color: #F8F8F8;
-    text-align: center;
-    margin-bottom: 10px;
-}
 </style>
 """, unsafe_allow_html=True)
 
 st.markdown("<h1>🎵 Juego de Ritmo 🎵</h1>", unsafe_allow_html=True)
 st.markdown(
-    "<div class='small-text'>Escucha, toca y comprueba si tu ritmo está dentro de la variabilidad temporal admisible 👏</div>",
+    "<div class='small-text'>Escucha, toca y comprueba si tu ritmo está bien 👏</div>",
     unsafe_allow_html=True
 )
 
@@ -42,8 +36,6 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # -----------------------
 # NIVELES
 # -----------------------
-# Umbral base del TFG: tau = 0.087
-# Se relaja ligeramente según la complejidad rítmica del nivel
 
 levels = [
     {
@@ -90,6 +82,9 @@ levels = [
 if "nivel_actual" not in st.session_state:
     st.session_state.nivel_actual = 0
 
+if "replay_audio" not in st.session_state:
+    st.session_state.replay_audio = False
+
 nivel = levels[st.session_state.nivel_actual]
 
 st.progress((st.session_state.nivel_actual + 1) / len(levels))
@@ -97,6 +92,23 @@ st.progress((st.session_state.nivel_actual + 1) / len(levels))
 # -----------------------
 # FUNCIONES
 # -----------------------
+
+def audio_player(path, autoplay=False):
+    with open(path, "rb") as f:
+        audio_bytes = f.read()
+
+    audio_base64 = base64.b64encode(audio_bytes).decode()
+    autoplay_attr = "autoplay" if autoplay else ""
+
+    st.markdown(
+        f"""
+        <audio controls {autoplay_attr} style="width: 100%;">
+            <source src="data:audio/wav;base64,{audio_base64}" type="audio/wav">
+        </audio>
+        """,
+        unsafe_allow_html=True
+    )
+
 
 def safe_zscore(x):
     x = np.asarray(x, dtype=float)
@@ -127,7 +139,6 @@ def trim_audio(y, sr, hop_length=512, threshold_ratio=0.05):
 
 
 def rhythm_flux(y, sr, n_fft=2048, hop_length=512):
-    # Representación rítmica ligera basada en flujo espectral
     S = np.abs(librosa.stft(y=y, n_fft=n_fft, hop_length=hop_length))
     if S.shape[1] < 2:
         return np.zeros(1)
@@ -143,19 +154,15 @@ def rhythm_flux(y, sr, n_fft=2048, hop_length=512):
 
 
 def compute_tdi_metrics(ref_path, user_path):
-    # Cargamos ambos audios con la misma frecuencia de muestreo
     y_ref, sr_ref = librosa.load(ref_path, sr=None)
     y_usr, _ = librosa.load(user_path, sr=sr_ref)
 
-    # Recorte básico para eliminar silencios exteriores
     y_ref = trim_audio(y_ref, sr_ref)
     y_usr = trim_audio(y_usr, sr_ref)
 
-    # Representación rítmica
     s_ref = rhythm_flux(y_ref, sr_ref)
     s_usr = rhythm_flux(y_usr, sr_ref)
 
-    # Comprobaciones de seguridad
     if len(s_ref) < 2 or len(s_usr) < 2:
         return {
             "tdi": np.nan,
@@ -164,30 +171,22 @@ def compute_tdi_metrics(ref_path, user_path):
             "max_delay": np.nan
         }
 
-    # DTW
     _, wp = librosa.sequence.dtw(
         X=s_usr.reshape(1, -1),
         Y=s_ref.reshape(1, -1)
     )
+
     wp = wp[::-1]
 
-    # Índices del camino
     i = wp[:, 0]
     j = wp[:, 1]
 
-    # Retardo local: d_k = j_k - i_k
     d = j - i
     abs_d = np.abs(d)
 
-    # Métricas
     mean_delay = float(np.mean(abs_d))
     max_delay = float(np.max(abs_d))
-
-    # TDI como deformación acumulada
     tdi = float(np.sum(abs_d))
-
-    # TDI normalizado
-    # Se normaliza por la longitud del camino y de la referencia
     tdi_norm = float(tdi / (len(wp) * len(s_ref)))
 
     return {
@@ -196,12 +195,6 @@ def compute_tdi_metrics(ref_path, user_path):
         "mean_delay": mean_delay,
         "max_delay": max_delay
     }
-
-
-def format_metric(value, decimals=4):
-    if value is None or not np.isfinite(value):
-        return "No disponible"
-    return f"{value:.{decimals}f}"
 
 
 # -----------------------
@@ -217,10 +210,13 @@ st.image(nivel["img"], use_container_width=True)
 
 st.markdown("### 🎧 Escucha cómo suena")
 st.info("Escucha primero el ejemplo antes de grabarte 🎵")
-st.audio(nivel["audio"])
 
 if st.button("🔊 Volver a escuchar"):
-    st.audio(nivel["audio"])
+    st.session_state.replay_audio = True
+
+audio_player(nivel["audio"], autoplay=st.session_state.replay_audio)
+
+st.session_state.replay_audio = False
 
 # -----------------------
 # GRABACIÓN
@@ -228,7 +224,11 @@ if st.button("🔊 Volver a escuchar"):
 
 st.write("🎙️ ¡Ahora te toca a ti!")
 
-audio = audiorecorder("▶️ Grabar", "⏹️ Parar")
+audio = audiorecorder(
+    "▶️ Grabar",
+    "⏹️ Parar",
+    key=f"audio_recorder_nivel_{st.session_state.nivel_actual}"
+)
 
 if len(audio) > 0:
     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
@@ -245,30 +245,6 @@ if len(audio) > 0:
         if not np.isfinite(metrics["tdi_norm"]):
             st.error("No se ha podido analizar correctamente la grabación. Intenta grabar de nuevo.")
         else:
-            st.markdown("### 📊 Resultado del análisis")
-
-            colm1, colm2 = st.columns(2)
-            with colm1:
-                st.markdown(
-                    f"<div class='metric-box'><b>TDI</b><br>{format_metric(metrics['tdi'], 2)}</div>",
-                    unsafe_allow_html=True
-                )
-                st.markdown(
-                    f"<div class='metric-box'><b>Retardo medio</b><br>{format_metric(metrics['mean_delay'], 2)}</div>",
-                    unsafe_allow_html=True
-                )
-            with colm2:
-                st.markdown(
-                    f"<div class='metric-box'><b>TDI normalizado</b><br>{format_metric(metrics['tdi_norm'], 4)}</div>",
-                    unsafe_allow_html=True
-                )
-                st.markdown(
-                    f"<div class='metric-box'><b>Retardo máximo</b><br>{format_metric(metrics['max_delay'], 2)}</div>",
-                    unsafe_allow_html=True
-                )
-
-            st.write(f"**Umbral del nivel:** {nivel['tdi_threshold']:.3f}")
-
             if metrics["tdi_norm"] <= nivel["tdi_threshold"]:
                 st.balloons()
                 st.success("🎉 ¡Muy bien! Tu ritmo está dentro del rango admisible de este nivel.")
@@ -276,11 +252,12 @@ if len(audio) > 0:
                 if st.button("🚀 Siguiente nivel"):
                     if st.session_state.nivel_actual < len(levels) - 1:
                         st.session_state.nivel_actual += 1
+                        st.session_state.replay_audio = False
                         st.rerun()
                     else:
                         st.success("🏆 ¡Has completado todos los niveles!")
             else:
-                st.warning("😅 Hay una desviación rítmica mayor que la admisible en este nivel. Inténtalo otra vez.")
+                st.warning("😅 ¡Casi lo tienes! El ritmo no está del todo bien todavía. Inténtalo otra vez 👏")
 
 # -----------------------
 # NAVEGACIÓN
@@ -292,10 +269,12 @@ with col1:
     if st.button("⬅️ Atrás"):
         if st.session_state.nivel_actual > 0:
             st.session_state.nivel_actual -= 1
+            st.session_state.replay_audio = False
             st.rerun()
 
 with col2:
     if st.button("➡️ Adelante"):
         if st.session_state.nivel_actual < len(levels) - 1:
             st.session_state.nivel_actual += 1
+            st.session_state.replay_audio = False
             st.rerun()
