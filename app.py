@@ -93,6 +93,7 @@ st.markdown(f"""
 <style>
 .stApp {{
     background: linear-gradient(180deg, {nivel["color1"]} 0%, {nivel["color2"]} 100%);
+    --accent-color: {nivel["accent"]};
 }}
 
 .main-title {{
@@ -141,19 +142,39 @@ st.markdown(f"""
     margin: 32px 0 24px 0;
 }}
 
+/* Botones normales de Streamlit */
 div.stButton > button {{
     border-radius: 10px;
-    border: 1px solid {nivel["accent"]};
+    border: 1px solid var(--accent-color);
+    border-bottom: 3px solid var(--accent-color);
     color: #2F2F2F;
     background-color: #FFFFFF;
-    padding: 0.45rem 1rem;
+    padding: 8px 16px;
     font-weight: 600;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }}
 
 div.stButton > button:hover {{
-    border-color: {nivel["accent"]};
-    color: {nivel["accent"]};
+    border-color: var(--accent-color);
+    color: var(--accent-color);
     background-color: #FFFFFF;
+}}
+
+/* Botón del audiorecorder */
+button[kind="secondary"] {{
+    border-radius: 10px !important;
+    border: 1px solid var(--accent-color) !important;
+    border-bottom: 3px solid var(--accent-color) !important;
+    background-color: white !important;
+    color: #2F2F2F !important;
+    font-weight: 600 !important;
+    padding: 8px 16px !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+}}
+
+button[kind="secondary"]:hover {{
+    color: var(--accent-color) !important;
+    border-color: var(--accent-color) !important;
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -320,8 +341,8 @@ st.markdown("<div class='section-card'>", unsafe_allow_html=True)
 st.markdown("<div class='section-title'>Ahora te toca a ti</div>", unsafe_allow_html=True)
 
 audio = audiorecorder(
-    "Grabar",
-    "Parar",
+    "● Grabar",
+    "■ Parar",
     key=f"audio_recorder_nivel_{st.session_state.nivel_actual}"
 )
 
