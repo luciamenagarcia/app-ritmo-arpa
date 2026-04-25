@@ -4,6 +4,7 @@ import base64
 import numpy as np
 import streamlit as st
 import librosa
+import streamlit.components.v1 as components
 from audiorecorder import audiorecorder
 
 # -----------------------
@@ -38,41 +39,11 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # -----------------------
 
 levels = [
-    {
-        "nivel": 1,
-        "nombre": "🥁 Negras",
-        "img": os.path.join(BASE_DIR, "data", "nivel1.png"),
-        "audio": os.path.join(BASE_DIR, "data", "nivel1.wav"),
-        "tdi_threshold": 0.087
-    },
-    {
-        "nivel": 2,
-        "nombre": "🎶 Corcheas",
-        "img": os.path.join(BASE_DIR, "data", "nivel2.png"),
-        "audio": os.path.join(BASE_DIR, "data", "nivel2.wav"),
-        "tdi_threshold": 0.095
-    },
-    {
-        "nivel": 3,
-        "nombre": "⚡ Puntillo",
-        "img": os.path.join(BASE_DIR, "data", "nivel3.png"),
-        "audio": os.path.join(BASE_DIR, "data", "nivel3.wav"),
-        "tdi_threshold": 0.110
-    },
-    {
-        "nivel": 4,
-        "nombre": "🔥 Semicorcheas",
-        "img": os.path.join(BASE_DIR, "data", "nivel4.png"),
-        "audio": os.path.join(BASE_DIR, "data", "nivel4.wav"),
-        "tdi_threshold": 0.130
-    },
-    {
-        "nivel": 5,
-        "nombre": "🎯 Tresillos",
-        "img": os.path.join(BASE_DIR, "data", "nivel5.png"),
-        "audio": os.path.join(BASE_DIR, "data", "nivel5.wav"),
-        "tdi_threshold": 0.150
-    },
+    {"nivel": 1, "nombre": "🥁 Negras", "img": os.path.join(BASE_DIR, "data", "nivel1.png"), "audio": os.path.join(BASE_DIR, "data", "nivel1.wav"), "tdi_threshold": 0.087},
+    {"nivel": 2, "nombre": "🎶 Corcheas", "img": os.path.join(BASE_DIR, "data", "nivel2.png"), "audio": os.path.join(BASE_DIR, "data", "nivel2.wav"), "tdi_threshold": 0.095},
+    {"nivel": 3, "nombre": "⚡ Puntillo", "img": os.path.join(BASE_DIR, "data", "nivel3.png"), "audio": os.path.join(BASE_DIR, "data", "nivel3.wav"), "tdi_threshold": 0.110},
+    {"nivel": 4, "nombre": "🔥 Semicorcheas", "img": os.path.join(BASE_DIR, "data", "nivel4.png"), "audio": os.path.join(BASE_DIR, "data", "nivel4.wav"), "tdi_threshold": 0.130},
+    {"nivel": 5, "nombre": "🎯 Tresillos", "img": os.path.join(BASE_DIR, "data", "nivel5.png"), "audio": os.path.join(BASE_DIR, "data", "nivel5.wav"), "tdi_threshold": 0.150},
 ]
 
 # -----------------------
@@ -82,33 +53,53 @@ levels = [
 if "nivel_actual" not in st.session_state:
     st.session_state.nivel_actual = 0
 
-if "replay_audio" not in st.session_state:
-    st.session_state.replay_audio = False
-
 nivel = levels[st.session_state.nivel_actual]
 
 st.progress((st.session_state.nivel_actual + 1) / len(levels))
 
 # -----------------------
-# FUNCIONES
+# AUDIO PLAYER (CON BOTÓN REAL)
 # -----------------------
 
-def audio_player(path, autoplay=False):
+def audio_player(path):
     with open(path, "rb") as f:
         audio_bytes = f.read()
 
     audio_base64 = base64.b64encode(audio_bytes).decode()
-    autoplay_attr = "autoplay" if autoplay else ""
 
-    st.markdown(
+    components.html(
         f"""
-        <audio controls {autoplay_attr} style="width: 100%;">
-            <source src="data:audio/wav;base64,{audio_base64}" type="audio/wav">
-        </audio>
+        <div style="width: 100%;">
+            <audio id="audio_ejemplo" controls style="width: 100%;">
+                <source src="data:audio/wav;base64,{audio_base64}" type="audio/wav">
+            </audio>
+
+            <button 
+                onclick="
+                    var audio = document.getElementById('audio_ejemplo');
+                    audio.currentTime = 0;
+                    audio.play();
+                "
+                style="
+                    margin-top: 12px;
+                    padding: 8px 14px;
+                    border-radius: 8px;
+                    border: 1px solid #ddd;
+                    background-color: white;
+                    cursor: pointer;
+                    font-size: 15px;
+                "
+            >
+                🔊 Volver a escuchar
+            </button>
+        </div>
         """,
-        unsafe_allow_html=True
+        height=110
     )
 
+# -----------------------
+# FUNCIONES AUDIO
+# -----------------------
 
 def safe_zscore(x):
     x = np.asarray(x, dtype=float)
@@ -147,10 +138,7 @@ def rhythm_flux(y, sr, n_fft=2048, hop_length=512):
     flux = np.log(flux + 1e-6)
     flux = safe_zscore(flux)
 
-    if len(flux) == 0:
-        return np.zeros(1)
-
-    return flux
+    return flux if len(flux) > 0 else np.zeros(1)
 
 
 def compute_tdi_metrics(ref_path, user_path):
@@ -164,12 +152,7 @@ def compute_tdi_metrics(ref_path, user_path):
     s_usr = rhythm_flux(y_usr, sr_ref)
 
     if len(s_ref) < 2 or len(s_usr) < 2:
-        return {
-            "tdi": np.nan,
-            "tdi_norm": np.nan,
-            "mean_delay": np.nan,
-            "max_delay": np.nan
-        }
+        return {"tdi_norm": np.nan}
 
     _, wp = librosa.sequence.dtw(
         X=s_usr.reshape(1, -1),
@@ -177,25 +160,10 @@ def compute_tdi_metrics(ref_path, user_path):
     )
 
     wp = wp[::-1]
+    d = wp[:, 1] - wp[:, 0]
+    tdi_norm = float(np.sum(np.abs(d)) / (len(wp) * len(s_ref)))
 
-    i = wp[:, 0]
-    j = wp[:, 1]
-
-    d = j - i
-    abs_d = np.abs(d)
-
-    mean_delay = float(np.mean(abs_d))
-    max_delay = float(np.max(abs_d))
-    tdi = float(np.sum(abs_d))
-    tdi_norm = float(tdi / (len(wp) * len(s_ref)))
-
-    return {
-        "tdi": tdi,
-        "tdi_norm": tdi_norm,
-        "mean_delay": mean_delay,
-        "max_delay": max_delay
-    }
-
+    return {"tdi_norm": tdi_norm}
 
 # -----------------------
 # INTERFAZ
@@ -211,12 +179,7 @@ st.image(nivel["img"], use_container_width=True)
 st.markdown("### 🎧 Escucha cómo suena")
 st.info("Escucha primero el ejemplo antes de grabarte 🎵")
 
-if st.button("🔊 Volver a escuchar"):
-    st.session_state.replay_audio = True
-
-audio_player(nivel["audio"], autoplay=st.session_state.replay_audio)
-
-st.session_state.replay_audio = False
+audio_player(nivel["audio"])
 
 # -----------------------
 # GRABACIÓN
@@ -243,16 +206,15 @@ if len(audio) > 0:
         metrics = compute_tdi_metrics(nivel["audio"], user_audio_path)
 
         if not np.isfinite(metrics["tdi_norm"]):
-            st.error("No se ha podido analizar correctamente la grabación. Intenta grabar de nuevo.")
+            st.error("No se ha podido analizar correctamente la grabación.")
         else:
             if metrics["tdi_norm"] <= nivel["tdi_threshold"]:
                 st.balloons()
-                st.success("🎉 ¡Muy bien! Tu ritmo está dentro del rango admisible de este nivel.")
+                st.success("🎉 ¡Muy bien! Tu ritmo está dentro del rango admisible.")
 
                 if st.button("🚀 Siguiente nivel"):
                     if st.session_state.nivel_actual < len(levels) - 1:
                         st.session_state.nivel_actual += 1
-                        st.session_state.replay_audio = False
                         st.rerun()
                     else:
                         st.success("🏆 ¡Has completado todos los niveles!")
@@ -269,12 +231,10 @@ with col1:
     if st.button("⬅️ Atrás"):
         if st.session_state.nivel_actual > 0:
             st.session_state.nivel_actual -= 1
-            st.session_state.replay_audio = False
             st.rerun()
 
 with col2:
     if st.button("➡️ Adelante"):
         if st.session_state.nivel_actual < len(levels) - 1:
             st.session_state.nivel_actual += 1
-            st.session_state.replay_audio = False
             st.rerun()
