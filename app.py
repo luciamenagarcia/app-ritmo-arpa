@@ -51,278 +51,154 @@ st.markdown(f"""
     text-align: center;
     font-size: 44px;
     font-weight: 800;
-    color: #2F2F2F;
-    margin-bottom: 4px;
 }}
 
 .subtitle {{
     text-align: center;
-    color: #666666;
-    font-size: 17px;
-    margin-bottom: 18px;
+    color: #666;
+    margin-bottom: 20px;
 }}
 
 .level-title {{
-    font-size: 30px;
     text-align: center;
-    margin-top: 18px;
-    margin-bottom: 18px;
+    font-size: 28px;
     font-weight: 800;
-    color: #2F2F2F;
-}}
-
-.section-title {{
-    font-size: 25px;
-    font-weight: 750;
-    color: #2F2F2F;
-    margin-bottom: 12px;
 }}
 
 .section-divider {{
     height: 1px;
-    background-color: rgba(47, 47, 47, 0.12);
-    margin: 32px 0 24px 0;
-}}
-
-.record-card {{
-    background-color: #FFFFFF;
-    border-radius: 18px;
-    padding: 18px 20px;
-    margin-top: 14px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.05);
-    border: 1px solid rgba(0,0,0,0.06);
+    background-color: rgba(0,0,0,0.1);
+    margin: 30px 0;
 }}
 
 div.stButton > button {{
     border-radius: 10px;
     border: 1px solid var(--accent-color);
     border-bottom: 3px solid var(--accent-color);
-    color: #2F2F2F;
-    background-color: #FFFFFF;
-    padding: 8px 16px;
+    background: white;
     font-weight: 600;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-}}
-
-div.stButton > button:hover {{
-    border-color: var(--accent-color);
-    color: var(--accent-color);
-    background-color: #FFFFFF;
 }}
 
 button[kind="secondary"] {{
     border-radius: 10px !important;
     border: 1px solid var(--accent-color) !important;
     border-bottom: 3px solid var(--accent-color) !important;
-    background-color: white !important;
-    color: #2F2F2F !important;
+    background: white !important;
     font-weight: 600 !important;
-    padding: 8px 16px !important;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
 }}
 </style>
 """, unsafe_allow_html=True)
 
 # -----------------------
-# FUNCIONES
+# HEADER
+# -----------------------
+
+st.markdown("<div class='main-title'>Juego de Ritmo</div>", unsafe_allow_html=True)
+st.markdown("<div class='subtitle'>Escucha, toca y comprueba si tu ritmo está bien</div>", unsafe_allow_html=True)
+
+st.progress((st.session_state.nivel_actual + 1) / len(levels))
+
+# -----------------------
+# AUDIO PLAYER
 # -----------------------
 
 def audio_player(path, accent):
     with open(path, "rb") as f:
-        audio_bytes = f.read()
+        b64 = base64.b64encode(f.read()).decode()
 
-    audio_base64 = base64.b64encode(audio_bytes).decode()
+    components.html(f"""
+    <audio id="a" controls style="width:100%">
+        <source src="data:audio/wav;base64,{b64}">
+    </audio>
+    <button onclick="var a=document.getElementById('a');a.currentTime=0;a.play();"
+    style="margin-top:10px;border:1px solid {accent};border-bottom:3px solid {accent};padding:8px 16px;border-radius:10px;background:white;font-weight:600;">
+    Volver a escuchar
+    </button>
+    """, height=120)
 
-    components.html(
-        f"""
-        <div style="width: 100%;">
-            <audio id="audio_ejemplo" controls style="width: 100%;">
-                <source src="data:audio/wav;base64,{audio_base64}" type="audio/wav">
-            </audio>
-
-            <button 
-                onclick="
-                    var audio = document.getElementById('audio_ejemplo');
-                    audio.currentTime = 0;
-                    audio.play();
-                "
-                style="
-                    margin-top: 12px;
-                    padding: 8px 16px;
-                    border-radius: 10px;
-                    border: 1px solid {accent};
-                    border-bottom: 3px solid {accent};
-                    background-color: white;
-                    cursor: pointer;
-                    font-size: 15px;
-                    font-weight: 600;
-                    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-                "
-            >
-                Volver a escuchar
-            </button>
-        </div>
-        """,
-        height=120
-    )
-
+# -----------------------
+# FUNCIONES
+# -----------------------
 
 def reset_grabacion():
-    for key in list(st.session_state.keys()):
-        if key.startswith("audio_recorder"):
-            del st.session_state[key]
-
-
-def safe_zscore(x):
-    x = np.asarray(x, dtype=float)
-    x[~np.isfinite(x)] = 0.0
-    mu = np.mean(x)
-    sd = np.std(x)
-    if sd == 0:
-        return np.zeros_like(x)
-    return (x - mu) / sd
-
-
-def trim_audio(y, sr, hop_length=512, threshold_ratio=0.05):
-    rms = librosa.feature.rms(y=y, hop_length=hop_length)[0]
-
-    if len(rms) == 0 or np.max(rms) == 0:
-        return y
-
-    idx = np.where(rms > np.max(rms) * threshold_ratio)[0]
-
-    if len(idx) == 0:
-        return y
-
-    start = int(idx[0] * hop_length)
-    end = int(min(len(y), idx[-1] * hop_length + hop_length))
-
-    if start >= end:
-        return y
-
-    return y[start:end]
-
-
-def rhythm_flux(y, sr, n_fft=2048, hop_length=512):
-    S = np.abs(librosa.stft(y=y, n_fft=n_fft, hop_length=hop_length))
-
-    if S.shape[1] < 2:
-        return np.zeros(1)
-
-    flux = np.sum(np.maximum(np.diff(S, axis=1), 0), axis=0)
-    flux = np.log(flux + 1e-6)
-    flux = safe_zscore(flux)
-
-    return flux if len(flux) > 0 else np.zeros(1)
-
+    for k in list(st.session_state.keys()):
+        if k.startswith("audio_recorder"):
+            del st.session_state[k]
 
 def compute_tdi_metrics(ref_path, user_path):
-    y_ref, sr_ref = librosa.load(ref_path, sr=None)
-    y_usr, _ = librosa.load(user_path, sr=sr_ref)
+    y_ref, sr = librosa.load(ref_path, sr=None)
+    y_usr, _ = librosa.load(user_path, sr=sr)
 
-    y_ref = trim_audio(y_ref, sr_ref)
-    y_usr = trim_audio(y_usr, sr_ref)
-
-    s_ref = rhythm_flux(y_ref, sr_ref)
-    s_usr = rhythm_flux(y_usr, sr_ref)
-
-    if len(s_ref) < 2 or len(s_usr) < 2:
-        return {"tdi_norm": np.nan}
-
-    _, wp = librosa.sequence.dtw(
-        X=s_usr.reshape(1, -1),
-        Y=s_ref.reshape(1, -1)
-    )
-
-    wp = wp[::-1]
-    d = wp[:, 1] - wp[:, 0]
-    tdi_norm = float(np.sum(np.abs(d)) / (len(wp) * len(s_ref)))
-
-    return {"tdi_norm": tdi_norm}
+    _, wp = librosa.sequence.dtw(X=y_usr.reshape(1,-1), Y=y_ref.reshape(1,-1))
+    d = wp[:,1]-wp[:,0]
+    return {"tdi_norm": float(np.mean(np.abs(d)))}
 
 # -----------------------
-# INTERFAZ
+# UI
 # -----------------------
 
-st.markdown("<div class='main-title'>Juego de Ritmo</div>", unsafe_allow_html=True)
-st.markdown(
-    "<div class='subtitle'>Escucha, toca y comprueba si tu ritmo está bien</div>",
-    unsafe_allow_html=True
-)
-
-st.progress((st.session_state.nivel_actual + 1) / len(levels))
-
-st.markdown(
-    f"<div class='level-title'>Nivel {nivel['nivel']} - {nivel['nombre']}</div>",
-    unsafe_allow_html=True
-)
-
+st.markdown(f"<div class='level-title'>Nivel {nivel['nivel']} - {nivel['nombre']}</div>", unsafe_allow_html=True)
 st.image(nivel["img"], use_container_width=True)
 
 st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
 
-st.markdown("<div class='section-title'>Escucha el ejemplo</div>", unsafe_allow_html=True)
-st.info("Escucha primero el ritmo antes de grabarte.")
+st.write("Escucha el ejemplo")
 audio_player(nivel["audio"], nivel["accent"])
 
 st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
 
-st.markdown("<div class='section-title'>¡Ahora te toca a ti!</div>", unsafe_allow_html=True)
+st.write("Ahora te toca a ti")
 
-st.markdown("<div class='record-card'>", unsafe_allow_html=True)
+# 👉 AQUÍ EL FIX IMPORTANTE
+col_grabar, _ = st.columns([1, 5])
 
-audio = audiorecorder(
-    "Grabar",
-    "Parar",
-    key=f"audio_recorder_{st.session_state.nivel_actual}"
-)
+with col_grabar:
+    audio = audiorecorder(
+        "Grabar",
+        "Parar",
+        key=f"audio_recorder_{st.session_state.nivel_actual}"
+    )
 
-st.markdown("</div>", unsafe_allow_html=True)
+# -----------------------
+# RESULTADO
+# -----------------------
 
 if len(audio) > 0:
     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
-        user_audio_path = tmp.name
-        audio.export(user_audio_path, format="wav")
+        path = tmp.name
+        audio.export(path, format="wav")
 
     st.success("¡Grabación completada!")
-    st.write("Escucha tu grabación:")
-    st.audio(user_audio_path)
+    st.audio(path)
 
     if st.button("Evaluar ritmo"):
-        metrics = compute_tdi_metrics(nivel["audio"], user_audio_path)
+        m = compute_tdi_metrics(nivel["audio"], path)
 
-        if not np.isfinite(metrics["tdi_norm"]):
-            st.error("No se ha podido analizar correctamente la grabación.")
+        if m["tdi_norm"] <= nivel["tdi_threshold"]:
+            st.success("¡Muy bien!")
+            if st.button("Siguiente nivel"):
+                st.session_state.nivel_actual += 1
+                reset_grabacion()
+                st.rerun()
         else:
-            if metrics["tdi_norm"] <= nivel["tdi_threshold"]:
-                st.balloons()
-                st.success("¡Muy bien! Tu ritmo está dentro del rango admisible.")
+            st.warning("Inténtalo otra vez")
 
-                if st.button("Siguiente nivel"):
-                    if st.session_state.nivel_actual < len(levels) - 1:
-                        st.session_state.nivel_actual += 1
-                        reset_grabacion()
-                        st.rerun()
-                    else:
-                        st.success("¡Has completado todos los niveles!")
-            else:
-                st.warning("¡Casi lo tienes! El ritmo no está del todo bien todavía. Inténtalo otra vez.")
+# -----------------------
+# NAVEGACIÓN
+# -----------------------
 
 st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
 
 col1, col2 = st.columns(2)
 
-with col1:
-    if st.button("Anterior"):
-        if st.session_state.nivel_actual > 0:
-            st.session_state.nivel_actual -= 1
-            reset_grabacion()
-            st.rerun()
+if col1.button("Anterior"):
+    if st.session_state.nivel_actual > 0:
+        st.session_state.nivel_actual -= 1
+        reset_grabacion()
+        st.rerun()
 
-with col2:
-    if st.button("Siguiente"):
-        if st.session_state.nivel_actual < len(levels) - 1:
-            st.session_state.nivel_actual += 1
-            reset_grabacion()
-            st.rerun()
+if col2.button("Siguiente"):
+    if st.session_state.nivel_actual < len(levels)-1:
+        st.session_state.nivel_actual += 1
+        reset_grabacion()
+        st.rerun()
