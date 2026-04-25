@@ -17,14 +17,20 @@ st.markdown("""
 <style>
 .main {background-color: #FFFDF7;}
 h1 {text-align: center; color: #FF6B6B;}
-.level-title {font-size: 28px; text-align: center; margin-bottom: 10px; font-weight: 700;}
+.level-title {
+    font-size: 30px;
+    text-align: center;
+    margin-bottom: 10px;
+    font-weight: 800;
+    color: #333333;
+}
 .small-text {text-align: center; color: #666666; font-size: 16px;}
 </style>
 """, unsafe_allow_html=True)
 
 st.markdown("<h1>🎵 Juego de Ritmo 🎵</h1>", unsafe_allow_html=True)
 st.markdown(
-    "<div class='small-text'>Escucha, toca y comprueba si tu ritmo está bien</div>",
+    "<div class='small-text'>Escucha, toca y comprueba si tu ritmo está bien 👏</div>",
     unsafe_allow_html=True
 )
 
@@ -102,6 +108,12 @@ def audio_player(path):
 # -----------------------
 # FUNCIONES AUDIO
 # -----------------------
+
+def reset_grabacion():
+    for key in list(st.session_state.keys()):
+        if key.startswith("audio_recorder"):
+            del st.session_state[key]
+
 
 def safe_zscore(x):
     x = np.asarray(x, dtype=float)
@@ -217,6 +229,7 @@ if len(audio) > 0:
                 if st.button("🚀 Siguiente nivel"):
                     if st.session_state.nivel_actual < len(levels) - 1:
                         st.session_state.nivel_actual += 1
+                        reset_grabacion()
                         st.rerun()
                     else:
                         st.success("🏆 ¡Has completado todos los niveles!")
@@ -233,10 +246,12 @@ with col1:
     if st.button("⬅️ Atrás"):
         if st.session_state.nivel_actual > 0:
             st.session_state.nivel_actual -= 1
+            reset_grabacion()
             st.rerun()
 
 with col2:
     if st.button("➡️ Adelante"):
         if st.session_state.nivel_actual < len(levels) - 1:
             st.session_state.nivel_actual += 1
+            reset_grabacion()
             st.rerun()
