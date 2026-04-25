@@ -24,7 +24,7 @@ h1 {text-align: center; color: #FF6B6B;}
 
 st.markdown("<h1>🎵 Juego de Ritmo 🎵</h1>", unsafe_allow_html=True)
 st.markdown(
-    "<div class='small-text'>Escucha, toca y comprueba si tu ritmo está bien 👏</div>",
+    "<div class='small-text'>Escucha, toca y comprueba si tu ritmo está bien</div>",
     unsafe_allow_html=True
 )
 
