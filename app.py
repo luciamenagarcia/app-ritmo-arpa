@@ -58,7 +58,7 @@ nivel = levels[st.session_state.nivel_actual]
 st.progress((st.session_state.nivel_actual + 1) / len(levels))
 
 # -----------------------
-# AUDIO PLAYER (CON BOTÓN REAL)
+# AUDIO PLAYER
 # -----------------------
 
 def audio_player(path):
@@ -82,19 +82,21 @@ def audio_player(path):
                 "
                 style="
                     margin-top: 12px;
-                    padding: 8px 14px;
-                    border-radius: 8px;
-                    border: 1px solid #ddd;
+                    padding: 8px 16px;
+                    border-radius: 10px;
+                    border: 1px solid #d0d0d0;
+                    border-bottom: 3px solid #bdbdbd;
                     background-color: white;
                     cursor: pointer;
                     font-size: 15px;
+                    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
                 "
             >
                 🔊 Volver a escuchar
             </button>
         </div>
         """,
-        height=110
+        height=120
     )
 
 # -----------------------
