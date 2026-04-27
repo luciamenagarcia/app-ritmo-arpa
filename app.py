@@ -21,10 +21,10 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 levels = [
     {"nivel": 1, "nombre": "Negras", "img": os.path.join(BASE_DIR, "data", "nivel1.png"), "audio": os.path.join(BASE_DIR, "data", "nivel1.wav"), "tdi_threshold": 0.087, "color1": "#EAF4FF", "color2": "#F7FBFF", "accent": "#2D8CFF"},
-    {"nivel": 2, "nombre": "Corcheas", "img": os.path.join(BASE_DIR, "data", "nivel2.png"), "audio": os.path.join(BASE_DIR, "data", "nivel2.wav"), "tdi_threshold": 0.095, "color1": "#EAFBF1", "color2": "#F8FFFB", "accent": "#2EB872"},
-    {"nivel": 3, "nombre": "Puntillo", "img": os.path.join(BASE_DIR, "data", "nivel3.png"), "audio": os.path.join(BASE_DIR, "data", "nivel3.wav"), "tdi_threshold": 0.110, "color1": "#FFF3E6", "color2": "#FFFBF6", "accent": "#FF9F43"},
-    {"nivel": 4, "nombre": "Semicorcheas", "img": os.path.join(BASE_DIR, "data", "nivel4.png"), "audio": os.path.join(BASE_DIR, "data", "nivel4.wav"), "tdi_threshold": 0.130, "color1": "#F2ECFF", "color2": "#FBF9FF", "accent": "#7B61FF"},
-    {"nivel": 5, "nombre": "Tresillos", "img": os.path.join(BASE_DIR, "data", "nivel5.png"), "audio": os.path.join(BASE_DIR, "data", "nivel5.wav"), "tdi_threshold": 0.150, "color1": "#FFEAF3", "color2": "#FFF8FB", "accent": "#FF5C8A"},
+    {"nivel": 2, "nombre": "Corcheas", "img": os.path.join(BASE_DIR, "data", "nivel2.png"), "audio": os.path.join(BASE_DIR, "data", "nivel2.wav"), "tdi_threshold": 0.087, "color1": "#EAFBF1", "color2": "#F8FFFB", "accent": "#2EB872"},
+    {"nivel": 3, "nombre": "Puntillo", "img": os.path.join(BASE_DIR, "data", "nivel3.png"), "audio": os.path.join(BASE_DIR, "data", "nivel3.wav"), "tdi_threshold": 0.087, "color1": "#FFF3E6", "color2": "#FFFBF6", "accent": "#FF9F43"},
+    {"nivel": 4, "nombre": "Semicorcheas", "img": os.path.join(BASE_DIR, "data", "nivel4.png"), "audio": os.path.join(BASE_DIR, "data", "nivel4.wav"), "tdi_threshold": 0.087, "color1": "#F2ECFF", "color2": "#FBF9FF", "accent": "#7B61FF"},
+    {"nivel": 5, "nombre": "Tresillos", "img": os.path.join(BASE_DIR, "data", "nivel5.png"), "audio": os.path.join(BASE_DIR, "data", "nivel5.wav"), "tdi_threshold": 0.087, "color1": "#FFEAF3", "color2": "#FFF8FB", "accent": "#FF5C8A"},
 ]
 
 # -----------------------
