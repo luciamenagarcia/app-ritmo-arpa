@@ -15,16 +15,19 @@ st.set_page_config(page_title="Juego de Ritmo", layout="centered")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# Umbral único de referencia para la evaluación rítmica
+TDI_THRESHOLD = 0.087
+
 # -----------------------
 # NIVELES
 # -----------------------
 
 levels = [
-    {"nivel": 1, "nombre": "Negras", "img": os.path.join(BASE_DIR, "data", "nivel1.png"), "audio": os.path.join(BASE_DIR, "data", "nivel1.wav"), "tdi_threshold": 0.087, "color1": "#EAF4FF", "color2": "#F7FBFF", "accent": "#2D8CFF"},
-    {"nivel": 2, "nombre": "Corcheas", "img": os.path.join(BASE_DIR, "data", "nivel2.png"), "audio": os.path.join(BASE_DIR, "data", "nivel2.wav"), "tdi_threshold": 0.087, "color1": "#EAFBF1", "color2": "#F8FFFB", "accent": "#2EB872"},
-    {"nivel": 3, "nombre": "Puntillo", "img": os.path.join(BASE_DIR, "data", "nivel3.png"), "audio": os.path.join(BASE_DIR, "data", "nivel3.wav"), "tdi_threshold": 0.087, "color1": "#FFF3E6", "color2": "#FFFBF6", "accent": "#FF9F43"},
-    {"nivel": 4, "nombre": "Semicorcheas", "img": os.path.join(BASE_DIR, "data", "nivel4.png"), "audio": os.path.join(BASE_DIR, "data", "nivel4.wav"), "tdi_threshold": 0.087, "color1": "#F2ECFF", "color2": "#FBF9FF", "accent": "#7B61FF"},
-    {"nivel": 5, "nombre": "Tresillos", "img": os.path.join(BASE_DIR, "data", "nivel5.png"), "audio": os.path.join(BASE_DIR, "data", "nivel5.wav"), "tdi_threshold": 0.087, "color1": "#FFEAF3", "color2": "#FFF8FB", "accent": "#FF5C8A"},
+    {"nivel": 1, "nombre": "Negras", "img": os.path.join(BASE_DIR, "data", "nivel1.png"), "audio": os.path.join(BASE_DIR, "data", "nivel1.wav"), "color1": "#EAF4FF", "color2": "#F7FBFF", "accent": "#2D8CFF"},
+    {"nivel": 2, "nombre": "Corcheas", "img": os.path.join(BASE_DIR, "data", "nivel2.png"), "audio": os.path.join(BASE_DIR, "data", "nivel2.wav"), "color1": "#EAFBF1", "color2": "#F8FFFB", "accent": "#2EB872"},
+    {"nivel": 3, "nombre": "Puntillo", "img": os.path.join(BASE_DIR, "data", "nivel3.png"), "audio": os.path.join(BASE_DIR, "data", "nivel3.wav"), "color1": "#FFF3E6", "color2": "#FFFBF6", "accent": "#FF9F43"},
+    {"nivel": 4, "nombre": "Semicorcheas", "img": os.path.join(BASE_DIR, "data", "nivel4.png"), "audio": os.path.join(BASE_DIR, "data", "nivel4.wav"), "color1": "#F2ECFF", "color2": "#FBF9FF", "accent": "#7B61FF"},
+    {"nivel": 5, "nombre": "Tresillos", "img": os.path.join(BASE_DIR, "data", "nivel5.png"), "audio": os.path.join(BASE_DIR, "data", "nivel5.wav"), "color1": "#FFEAF3", "color2": "#FFF8FB", "accent": "#FF5C8A"},
 ]
 
 # -----------------------
@@ -164,13 +167,27 @@ def reset_grabacion():
             del st.session_state[key]
 
 
+def is_valid_audio(y, energy_threshold=1e-4):
+    """
+    Comprueba si la grabación contiene señal suficiente.
+    Si la amplitud máxima es demasiado baja, se considera silencio o audio no válido.
+    """
+    if y is None or len(y) == 0:
+        return False
+
+    return np.max(np.abs(y)) > energy_threshold
+
+
 def safe_zscore(x):
     x = np.asarray(x, dtype=float)
     x[~np.isfinite(x)] = 0.0
+
     mu = np.mean(x)
     sd = np.std(x)
+
     if sd == 0:
         return np.zeros_like(x)
+
     return (x - mu) / sd
 
 
@@ -214,6 +231,10 @@ def compute_tdi_metrics(ref_path, user_path):
     y_ref = trim_audio(y_ref, sr_ref)
     y_usr = trim_audio(y_usr, sr_ref)
 
+    # Si la grabación no contiene señal suficiente, no se analiza
+    if not is_valid_audio(y_usr):
+        return {"tdi_norm": np.nan}
+
     s_ref = rhythm_flux(y_ref, sr_ref)
     s_usr = rhythm_flux(y_usr, sr_ref)
 
@@ -226,10 +247,12 @@ def compute_tdi_metrics(ref_path, user_path):
     )
 
     wp = wp[::-1]
+
     d = wp[:, 1] - wp[:, 0]
     tdi_norm = float(np.sum(np.abs(d)) / (len(wp) * len(s_ref)))
 
     return {"tdi_norm": tdi_norm}
+
 
 # -----------------------
 # INTERFAZ
@@ -290,9 +313,9 @@ if len(audio) > 0:
         metrics = compute_tdi_metrics(nivel["audio"], user_audio_path)
 
         if not np.isfinite(metrics["tdi_norm"]):
-            st.error("No se ha podido analizar correctamente la grabación.")
+            st.error("No se ha podido analizar correctamente la grabación. Intenta grabar de nuevo tocando el ritmo con más claridad.")
         else:
-            if metrics["tdi_norm"] <= nivel["tdi_threshold"]:
+            if metrics["tdi_norm"] <= TDI_THRESHOLD:
                 st.balloons()
                 st.success("¡Muy bien! Tu ritmo está dentro del rango admisible.")
 
