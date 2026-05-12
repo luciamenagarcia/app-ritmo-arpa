@@ -317,7 +317,7 @@ if len(audio) > 0:
         else:
             if metrics["tdi_norm"] <= TDI_THRESHOLD:
                 st.balloons()
-                st.success("¡Muy bien! Tu ritmo está dentro del rango admisible.")
+                st.success("¡Muy bien! Ya puedes pasar al siguiente nivel.")
 
                 if st.button("Siguiente nivel"):
                     if st.session_state.nivel_actual < len(levels) - 1:
